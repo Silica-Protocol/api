@@ -1,0 +1,80 @@
+[workspace]
+resolver = "2"
+members = ["migration"]
+
+[workspace.package]
+edition = "2024"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/Silica-Protocol/api"
+
+[workspace.dependencies]
+# Internal - Git dependencies
+silica-models = { git = "https://github.com/Silica-Protocol/protocol-core", branch = "main" }
+silica = { git = "https://github.com/Silica-Protocol/protocol", branch = "main" }
+
+# Core
+tokio = { version = "1.40", features = ["full"] }
+anyhow = "1.0"
+thiserror = "2.0"
+chrono = { version = "0.4", features = ["serde"] }
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Web framework
+axum = "0.8"
+tower = "0.5"
+tower-http = { version = "0.6", features = ["normalize-path", "trace", "cors"] }
+
+# Logging
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+
+# Utilities
+hex = "0.4"
+base64 = "0.22"
+
+[package]
+name = "silica-api"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+publish = false
+default-run = "silica-api-server"
+description = "REST API server for Silica Protocol"
+
+[dependencies]
+anyhow = { workspace = true }
+axum = { workspace = true }
+base64 = { workspace = true }
+chrono = { workspace = true }
+config = "0.14"
+hex = { workspace = true }
+jsonrpsee = { version = "0.26", features = ["http-client", "client"], default-features = false }
+migration = { path = "migration" }
+moka = { version = "0.12", features = ["future"] }
+silica-models = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+sea-orm = { version = "1.1", features = ["macros", "runtime-tokio-native-tls", "sqlx-postgres", "with-chrono", "with-json"] }
+silica = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true }
+tower = { workspace = true }
+tower-http = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+
+[features]
+default = []
+
+[[bin]]
+name = "silica-api-server"
+path = "src/main.rs"
+
+[profile.release]
+lto = true
+codegen-units = 1
+opt-level = 3

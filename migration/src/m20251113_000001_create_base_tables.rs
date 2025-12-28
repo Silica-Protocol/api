@@ -1,0 +1,259 @@
+use sea_orm_migration::prelude::*;
+use sea_orm_migration::sea_query::Expr;
+
+#[derive(DeriveMigrationName)]
+pub struct Migration;
+
+#[async_trait::async_trait]
+impl MigrationTrait for Migration {
+    async fn up(&self, manager: &SchemaManager) -> Result<(), DbErr> {
+        manager
+            .create_table(
+                Table::create()
+                    .table(ChainBlocks::Table)
+                    .if_not_exists()
+                    .col(
+                        ColumnDef::new(ChainBlocks::BlockNumber)
+                            .big_integer()
+                            .not_null()
+                            .primary_key(),
+                    )
+                    .col(
+                        ColumnDef::new(ChainBlocks::BlockHash)
+                            .string_len(130)
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(ChainBlocks::PreviousBlockHash)
+                            .string_len(130)
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(ChainBlocks::Timestamp)
+                            .timestamp_with_time_zone()
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(ChainBlocks::ValidatorAddress)
+                            .string_len(128)
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(ChainBlocks::GasUsed)
+                            .big_integer()
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(ChainBlocks::GasLimit)
+                            .big_integer()
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(ChainBlocks::StateRoot)
+                            .binary_len(32)
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(ChainBlocks::StateLeafCount)
+                            .big_integer()
+                            .not_null(),
+                    )
+                    .col(ColumnDef::new(ChainBlocks::TxCount).integer().not_null())
+                    .col(
+                        ColumnDef::new(ChainBlocks::IndexedAt)
+                            .timestamp_with_time_zone()
+                            .not_null()
+                            .default(Expr::current_timestamp()),
+                    )
+                    .col(
+                        ColumnDef::new(ChainBlocks::ReceivedAt)
+                            .timestamp_with_time_zone()
+                            .not_null()
+                            .default(Expr::current_timestamp()),
+                    )
+                    .index(
+                        Index::create()
+                            .name("idx_chain_blocks_hash")
+                            .unique()
+                            .col(ChainBlocks::BlockHash),
+                    )
+                    .index(
+                        Index::create()
+                            .name("idx_chain_blocks_timestamp")
+                            .col(ChainBlocks::Timestamp),
+                    )
+                    .to_owned(),
+            )
+            .await?;
+
+        manager
+            .create_table(
+                Table::create()
+                    .table(ChainTransactions::Table)
+                    .if_not_exists()
+                    .col(
+                        ColumnDef::new(ChainTransactions::TxId)
+                            .string_len(130)
+                            .not_null()
+                            .primary_key(),
+                    )
+                    .col(
+                        ColumnDef::new(ChainTransactions::BlockNumber)
+                            .big_integer()
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(ChainTransactions::Sender)
+                            .string_len(128)
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(ChainTransactions::Recipient)
+                            .string_len(128)
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(ChainTransactions::Amount)
+                            .big_integer()
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(ChainTransactions::Fee)
+                            .big_integer()
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(ChainTransactions::Nonce)
+                            .big_integer()
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(ChainTransactions::Timestamp)
+                            .timestamp_with_time_zone()
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(ChainTransactions::TransactionType)
+                            .string_len(64)
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(ChainTransactions::Payload)
+                            .json_binary()
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(ChainTransactions::IndexedAt)
+                            .timestamp_with_time_zone()
+                            .not_null()
+                            .default(Expr::current_timestamp()),
+                    )
+                    .foreign_key(
+                        ForeignKey::create()
+                            .name("fk_transactions_block")
+                            .from(ChainTransactions::Table, ChainTransactions::BlockNumber)
+                            .to(ChainBlocks::Table, ChainBlocks::BlockNumber)
+                            .on_delete(ForeignKeyAction::Cascade)
+                            .on_update(ForeignKeyAction::Cascade),
+                    )
+                    .index(
+                        Index::create()
+                            .name("idx_transactions_block")
+                            .col(ChainTransactions::BlockNumber),
+                    )
+                    .index(
+                        Index::create()
+                            .name("idx_transactions_sender")
+                            .col(ChainTransactions::Sender),
+                    )
+                    .index(
+                        Index::create()
+                            .name("idx_transactions_recipient")
+                            .col(ChainTransactions::Recipient),
+                    )
+                    .to_owned(),
+            )
+            .await?;
+
+        manager
+            .create_table(
+                Table::create()
+                    .table(IndexerCheckpoints::Table)
+                    .if_not_exists()
+                    .col(
+                        ColumnDef::new(IndexerCheckpoints::Id)
+                            .string_len(64)
+                            .not_null()
+                            .primary_key(),
+                    )
+                    .col(
+                        ColumnDef::new(IndexerCheckpoints::LastBlockNumber)
+                            .big_integer()
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(IndexerCheckpoints::UpdatedAt)
+                            .timestamp_with_time_zone()
+                            .not_null()
+                            .default(Expr::current_timestamp()),
+                    )
+                    .to_owned(),
+            )
+            .await?;
+
+        Ok(())
+    }
+
+    async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
+        manager
+            .drop_table(Table::drop().table(ChainTransactions::Table).to_owned())
+            .await?;
+        manager
+            .drop_table(Table::drop().table(ChainBlocks::Table).to_owned())
+            .await?;
+        manager
+            .drop_table(Table::drop().table(IndexerCheckpoints::Table).to_owned())
+            .await
+    }
+}
+
+#[derive(DeriveIden)]
+enum ChainBlocks {
+    Table,
+    BlockNumber,
+    BlockHash,
+    PreviousBlockHash,
+    Timestamp,
+    ValidatorAddress,
+    GasUsed,
+    GasLimit,
+    StateRoot,
+    StateLeafCount,
+    TxCount,
+    IndexedAt,
+    ReceivedAt,
+}
+
+#[derive(DeriveIden)]
+enum ChainTransactions {
+    Table,
+    TxId,
+    BlockNumber,
+    Sender,
+    Recipient,
+    Amount,
+    Fee,
+    Nonce,
+    Timestamp,
+    TransactionType,
+    Payload,
+    IndexedAt,
+}
+
+#[derive(DeriveIden)]
+enum IndexerCheckpoints {
+    Table,
+    Id,
+    LastBlockNumber,
+    UpdatedAt,
+}

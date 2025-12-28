@@ -1,0 +1,283 @@
+use sea_orm_migration::prelude::*;
+use sea_orm_migration::sea_query::Expr;
+
+#[derive(DeriveMigrationName)]
+pub struct Migration;
+
+#[async_trait::async_trait]
+impl MigrationTrait for Migration {
+    async fn up(&self, manager: &SchemaManager) -> Result<(), DbErr> {
+        // Governance proposals table
+        manager
+            .create_table(
+                Table::create()
+                    .table(GovernanceProposals::Table)
+                    .if_not_exists()
+                    .col(
+                        ColumnDef::new(GovernanceProposals::ProposalId)
+                            .big_integer()
+                            .not_null()
+                            .primary_key(),
+                    )
+                    .col(
+                        ColumnDef::new(GovernanceProposals::Proposer)
+                            .string_len(128)
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(GovernanceProposals::Targets)
+                            .json_binary()
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(GovernanceProposals::Values)
+                            .json_binary()
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(GovernanceProposals::Calldatas)
+                            .json_binary()
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(GovernanceProposals::Description)
+                            .text()
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(GovernanceProposals::VoteStart)
+                            .big_integer()
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(GovernanceProposals::VoteEnd)
+                            .big_integer()
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(GovernanceProposals::VotesFor)
+                            .big_integer()
+                            .not_null()
+                            .default(0),
+                    )
+                    .col(
+                        ColumnDef::new(GovernanceProposals::VotesAgainst)
+                            .big_integer()
+                            .not_null()
+                            .default(0),
+                    )
+                    .col(
+                        ColumnDef::new(GovernanceProposals::VotesAbstain)
+                            .big_integer()
+                            .not_null()
+                            .default(0),
+                    )
+                    .col(
+                        ColumnDef::new(GovernanceProposals::State)
+                            .string_len(32)
+                            .not_null()
+                            .default("Pending"),
+                    )
+                    .col(
+                        ColumnDef::new(GovernanceProposals::ExecutedAt)
+                            .timestamp_with_time_zone()
+                            .null(),
+                    )
+                    .col(
+                        ColumnDef::new(GovernanceProposals::CreatedAt)
+                            .timestamp_with_time_zone()
+                            .not_null()
+                            .default(Expr::current_timestamp()),
+                    )
+                    .col(
+                        ColumnDef::new(GovernanceProposals::UpdatedAt)
+                            .timestamp_with_time_zone()
+                            .not_null()
+                            .default(Expr::current_timestamp()),
+                    )
+                    .index(
+                        Index::create()
+                            .name("idx_proposals_proposer")
+                            .col(GovernanceProposals::Proposer),
+                    )
+                    .index(
+                        Index::create()
+                            .name("idx_proposals_state")
+                            .col(GovernanceProposals::State),
+                    )
+                    .index(
+                        Index::create()
+                            .name("idx_proposals_vote_start")
+                            .col(GovernanceProposals::VoteStart),
+                    )
+                    .index(
+                        Index::create()
+                            .name("idx_proposals_vote_end")
+                            .col(GovernanceProposals::VoteEnd),
+                    )
+                    .to_owned(),
+            )
+            .await?;
+
+        // Governance votes table
+        manager
+            .create_table(
+                Table::create()
+                    .table(GovernanceVotes::Table)
+                    .if_not_exists()
+                    .col(
+                        ColumnDef::new(GovernanceVotes::Id)
+                            .big_integer()
+                            .not_null()
+                            .auto_increment()
+                            .primary_key(),
+                    )
+                    .col(
+                        ColumnDef::new(GovernanceVotes::ProposalId)
+                            .big_integer()
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(GovernanceVotes::Voter)
+                            .string_len(128)
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(GovernanceVotes::Support)
+                            .integer()
+                            .not_null(), // 0=Against, 1=For, 2=Abstain
+                    )
+                    .col(
+                        ColumnDef::new(GovernanceVotes::Weight)
+                            .big_integer()
+                            .not_null(),
+                    )
+                    .col(ColumnDef::new(GovernanceVotes::Reason).text().null())
+                    .col(
+                        ColumnDef::new(GovernanceVotes::VotedAt)
+                            .timestamp_with_time_zone()
+                            .not_null()
+                            .default(Expr::current_timestamp()),
+                    )
+                    .foreign_key(
+                        ForeignKey::create()
+                            .name("fk_votes_proposal")
+                            .from(GovernanceVotes::Table, GovernanceVotes::ProposalId)
+                            .to(GovernanceProposals::Table, GovernanceProposals::ProposalId)
+                            .on_delete(ForeignKeyAction::Cascade)
+                            .on_update(ForeignKeyAction::Cascade),
+                    )
+                    .index(
+                        Index::create()
+                            .name("idx_votes_proposal_voter")
+                            .unique()
+                            .col(GovernanceVotes::ProposalId)
+                            .col(GovernanceVotes::Voter),
+                    )
+                    .index(
+                        Index::create()
+                            .name("idx_votes_voter")
+                            .col(GovernanceVotes::Voter),
+                    )
+                    .to_owned(),
+            )
+            .await?;
+
+        // Governance delegations table
+        manager
+            .create_table(
+                Table::create()
+                    .table(GovernanceDelegations::Table)
+                    .if_not_exists()
+                    .col(
+                        ColumnDef::new(GovernanceDelegations::Delegator)
+                            .string_len(128)
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(GovernanceDelegations::Delegatee)
+                            .string_len(128)
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(GovernanceDelegations::Amount)
+                            .big_integer()
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(GovernanceDelegations::DelegatedAt)
+                            .timestamp_with_time_zone()
+                            .not_null()
+                            .default(Expr::current_timestamp()),
+                    )
+                    .index(
+                        Index::create()
+                            .name("idx_delegations_delegatee")
+                            .col(GovernanceDelegations::Delegatee),
+                    )
+                    .primary_key(
+                        Index::create()
+                            .name("pk_governance_delegations")
+                            .col(GovernanceDelegations::Delegator)
+                            .col(GovernanceDelegations::Delegatee),
+                    )
+                    .to_owned(),
+            )
+            .await?;
+
+        Ok(())
+    }
+
+    async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
+        manager
+            .drop_table(Table::drop().table(GovernanceDelegations::Table).to_owned())
+            .await?;
+        manager
+            .drop_table(Table::drop().table(GovernanceVotes::Table).to_owned())
+            .await?;
+        manager
+            .drop_table(Table::drop().table(GovernanceProposals::Table).to_owned())
+            .await
+    }
+}
+
+#[derive(DeriveIden)]
+enum GovernanceProposals {
+    Table,
+    ProposalId,
+    Proposer,
+    Targets,
+    Values,
+    Calldatas,
+    Description,
+    VoteStart,
+    VoteEnd,
+    VotesFor,
+    VotesAgainst,
+    VotesAbstain,
+    State,
+    ExecutedAt,
+    CreatedAt,
+    UpdatedAt,
+}
+
+#[derive(DeriveIden)]
+enum GovernanceVotes {
+    Table,
+    Id,
+    ProposalId,
+    Voter,
+    Support,
+    Weight,
+    Reason,
+    VotedAt,
+}
+
+#[derive(DeriveIden)]
+enum GovernanceDelegations {
+    Table,
+    Delegator,
+    Delegatee,
+    Amount,
+    DelegatedAt,
+}

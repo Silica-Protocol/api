@@ -1,0 +1,29 @@
+[server]
+host = "127.0.0.1"
+port = 8080
+grpc_port = 9090
+
+[database]
+url = "postgres://postgres:postgres@localhost:5432/chert_api"
+max_connections = 16
+min_connections = 2
+
+[chain]
+rpc_url = "http://127.0.0.1:8545"
+request_timeout_ms = 3000
+
+[indexer]
+poll_interval_ms = 2000
+batch_size = 100
+
+[rate_limiting]
+anonymous_rpm = 100
+authenticated_rpm = 1000
+
+[cache]
+identities_max_capacity = 10000
+identities_ttl_seconds = 3600
+leaderboards_max_capacity = 256
+leaderboards_ttl_seconds = 300
+proposals_max_capacity = 1024
+proposals_ttl_seconds = 1800
