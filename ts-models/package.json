@@ -1,0 +1,24 @@
+{
+  "name": "@silica-protocol/api-models",
+  "version": "0.1.0",
+  "description": "TypeScript models for the Silica API service (Axum HTTP).",
+  "license": "Apache-2.0",
+  "private": false,
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "clean": "node -e \"require('fs').rmSync('dist', { recursive: true, force: true })\"",
+    "build": "npm run clean && tsc -p tsconfig.build.json",
+    "test": "node --version"
+  },
+  "devDependencies": {
+    "typescript": "~5.9.0"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  }
+}
