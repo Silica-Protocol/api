@@ -18,6 +18,7 @@ use crate::state::AppState;
 mod governance;
 mod identity;
 mod privacy;
+mod faucet;
 
 pub fn router(state: AppState) -> Router {
     assert!(
@@ -37,12 +38,14 @@ pub fn router(state: AppState) -> Router {
     let identity_router = identity::router().with_state(state.clone());
     let privacy_router = privacy::router().with_state(state.clone());
     let governance_router = governance::router().with_state(state.clone());
+    let faucet_router = faucet::router().with_state(state.clone());
     Router::new()
         .route("/health", get(health_live))
         .route("/health/ready", get(health_ready))
         .nest("/identity", identity_router)
         .nest("/privacy", privacy_router)
         .nest("/governance", governance_router)
+        .nest("/faucet", faucet_router)
         .layer(cors)
         .with_state(state)
 }

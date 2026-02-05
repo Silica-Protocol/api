@@ -4,6 +4,7 @@ mod m20251113_000001_create_base_tables;
 mod m20251113_000002_add_identity_tables;
 mod m20251113_000003_add_stealth_outputs;
 mod m20251113_000004_add_governance_tables;
+mod m20251113_000005_add_faucet_table;
 
 pub struct Migrator;
 
@@ -15,6 +16,7 @@ impl MigratorTrait for Migrator {
             Box::new(m20251113_000002_add_identity_tables::Migration),
             Box::new(m20251113_000003_add_stealth_outputs::Migration),
             Box::new(m20251113_000004_add_governance_tables::Migration),
+            Box::new(m20251113_000005_add_faucet_table::Migration),
         ]
     }
 }

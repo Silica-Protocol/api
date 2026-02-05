@@ -307,6 +307,48 @@ impl RpcClient {
 
         Ok(response)
     }
+
+    /// Request faucet tokens for a recipient address
+    pub async fn faucet_drip(&self, recipient: &str, amount: u64) -> Result<FaucetDripResponse> {
+        assert!(!recipient.is_empty(), "Recipient address must be provided");
+        assert!(amount > 0, "Faucet drip amount must be positive");
+        assert!(
+            amount <= 100_000_000_000,
+            "Faucet drip amount exceeds maximum"
+        );
+
+        let mut params = ObjectParams::new();
+        params
+            .insert("recipient", recipient)
+            .context("Failed to encode recipient parameter")?;
+        params
+            .insert("amount", amount)
+            .context("Failed to encode amount parameter")?;
+
+        let response: FaucetDripResponse = self
+            .inner
+            .request("faucet_drip", params)
+            .await
+            .context("RPC call faucet_drip failed")?;
+
+        assert!(
+            !response.tx_hash.is_empty(),
+            "Faucet RPC returned empty tx_hash"
+        );
+
+        Ok(response)
+    }
+
+    /// Get faucet status and balance
+    pub async fn faucet_status(&self) -> Result<FaucetStatusResponse> {
+        let response: FaucetStatusResponse = self
+            .inner
+            .request("faucet_status", rpc_params![])
+            .await
+            .context("RPC call faucet_status failed")?;
+
+        Ok(response)
+    }
 }
 
 #[derive(Debug, Deserialize)]
@@ -399,4 +441,28 @@ pub struct ContractDeploymentResponse {
     pub status: String,
     pub contract_address: String,
     pub code_hash: String,
+}
+
+/// Response from faucet drip RPC call
+#[derive(Debug, Deserialize)]
+pub struct FaucetDripResponse {
+    pub tx_hash: String,
+    pub amount: u64,
+    pub recipient: String,
+    pub faucet_balance: u64,
+    pub status: String,
+}
+
+/// Response from faucet status RPC call
+#[derive(Debug, Deserialize)]
+pub struct FaucetStatusResponse {
+    pub faucet_address: String,
+    pub balance: u64,
+    pub balance_formatted: String,
+    pub default_drip: u64,
+    pub default_drip_formatted: String,
+    pub max_drip: u64,
+    pub min_drip: u64,
+    pub drips_available: u64,
+    pub status: String,
 }

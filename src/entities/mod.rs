@@ -1,5 +1,6 @@
 pub mod chain_block;
 pub mod chain_transaction;
+pub mod faucet_request;
 pub mod governance_delegation;
 pub mod governance_proposal;
 pub mod governance_vote;
